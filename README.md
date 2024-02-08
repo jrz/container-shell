@@ -1,9 +1,10 @@
-# shell (container-shell)
+# shell (container-shell) v0.2
 
 Starts and attaches a sandboxed shell using docker with access to the current or project directory.
 
 **Warning: I haven't actually tested this with Docker Desktop yet as I use OrbStack**
 
+Please visit https://github.com/jrz/container-shell for the latest version.
 
 
 # Why?
@@ -27,6 +28,14 @@ It can read a Shellfile in a project directory to configure things like the dock
 In order to find the Shellfile or .docker.shell.cid it checks the current dir and all parents.
 
 
+
+# Installation
+There is no installer or package yet. Simply copy the shell script to any directory in your PATH.
+Make sure that the executable bit is set. For example:
+```
+cp shell /usr/local/bin/
+chmod +x /usr/local/bin/shell
+```
 
 # Usage
 The CLI will most likely change. The program can be used with or without creating a Shellfile:
