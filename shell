@@ -1,0 +1,366 @@
+#!/bin/sh
+# (c) 2023 Joris Verschoor
+# Starts and attaches a sandboxed shell using docker (OrbStack)
+# See https://github.com/jrz/container-shell
+
+set -e
+
+
+print_usage()  {
+cat <<EOF
+shell v0.2
+Usage:  shell [-f file] [docker-image]
+
+Starts and attaches a sandboxed shell using docker.
+
+The current or project directory is bind-mounted.
+The container is reused for shells in the project directory.
+The container will stop automatically when there are no sessions anymore.
+See https://github.com/jrz/container-shell for limitations and how it works.
+
+** CLI and settings will probably change in the future **
+       ** Please do not use for scripting (yet) **
+
+Examples
+  shell                   Uses a Shellfile to create a new shell
+  shell debian:bookworm   Creates a new shell based on debian:bookworm
+
+  Both commands check if a container exists using a .docker.shell.cid file.
+  Both commands will result in an attached shell.
+
+Options
+  -f           Name of the Shellfile (default: Shellfile)
+  -h, --help   Show this message
+
+Shellfile / Environment variables
+  DOCKER_PREFIX   Naming prefix  (ex. shellcontainer-myproject)
+  DOCKER_OPTS     Passed when creating container (ex. --platform linux/aarch64)
+  DOCKER_IMAGE    Docker image to use when creating the container (debian:bookworm)
+  TERM_BG_COLOR   Temporary terminal background color when inside container (#011279)
+  ITERM2_PROFILE  Temporary iTerm2 profile name when inside container (container-shell)
+EOF
+}
+
+
+
+# check whether user had supplied -h or --help . If yes display usage
+# getopts doesn't support long options
+# TODO: make posix compatible
+if [[ ( $@ == "--help") ||  $@ == "-h" ]]; then
+    print_usage
+    exit 0
+fi
+
+while getopts "hf:" opt; do
+    case $opt in
+        h)
+            print_usage
+            exit 0
+            ;;
+        f)
+            OPT_SHELLFILE=${OPTARG}
+            ;;
+        \?)
+            exit 1
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+
+
+
+# Max 1 positional argument
+if [ "$#" -ge 2 ]; then
+    print_usage
+    exit 1
+fi
+
+if [ "$1" ]; then
+    ARGS_DOCKER_IMAGE="$1"
+fi
+
+# Searches for the project root containing Shellfile or cidfile
+# Starts in the current directory, and keeps going up one level.
+find_project_root() {
+    set -e
+    filename_1=$1
+    filename_2=$2
+    parent=$(pwd)
+    found=""
+    done=""
+    while [ ! "$found" ] && [ ! "$done" ] 
+    do
+        if [ "$parent" = "/" ]; then
+            done=true
+        fi
+
+        # Shellfile
+        if [ -f "${parent}/$filename_1" ]; then
+            found=${parent}
+        fi
+
+        # cid-file
+        if [ -f "${parent}/$filename_2" ]; then
+            found=${parent}
+        fi
+
+        parent=$(dirname "$parent")
+    done
+    if [ "$found" ]; then
+        echo "$found"
+    fi
+}
+
+
+
+
+
+
+# Settings
+SHELLFILE=${OPT_SHELLFILE:-Shellfile}
+CID_FILE=".docker.shell.cid"
+
+# Find containing id in current directory or any parent dir
+PROJECT_ROOT=$(find_project_root "Shellfile" "$CID_FILE")
+
+# TODO: check for conflicting opt_shell file and project root
+# If we have detected an existing project root
+if [ "$PROJECT_ROOT" ]; then
+    if [ ! "$OPT_SHELLFILE" ]; then
+        if [ -f "$PROJECT_ROOT/Shellfile" ]; then
+            SHELLFILE="${PROJECT_ROOT}/Shellfile"
+        fi
+    fi
+
+    if [ -f "$PROJECT_ROOT/$CID_FILE" ]; then
+        CID_FILE="$PROJECT_ROOT/$CID_FILE"
+    fi
+else
+    PROJECT_ROOT=$(pwd  | realpath)
+fi
+
+
+
+
+
+if [ "$ARGS_DOCKER_IMAGE" ]; then
+    ARGS_DOCKER_IMAGE="$1"
+elif [ -f "$CID_FILE" ]; then
+    # We have a cid-file, so we can start without arguments
+    : # do nothing
+else
+    if ! [ -f "$SHELLFILE" ]; then
+        echo "$SHELLFILE does not exist and no cid-file exists. Please create a Shell file or specify a docker-image:"
+        echo 'DOCKER_PREFIX="shellcontainer-myproject"'
+        echo 'DOCKER_OPTS="--platform linux/aarch64"'
+        echo 'DOCKER_IMAGE="debian:bookworm"'
+        echo 'ITERM2_PROFILE="container-shell"'
+        echo 'TERM_BG_COLOR="#011279"'
+
+        exit 1
+    fi
+fi
+
+
+# Defaults
+# use the project directory as a a prefix
+PROJECT_NAME=$(basename "$PROJECT_ROOT" | tr ' ' '-' | tr -dc '[:alnum:]-' | tr '[:upper:]' '[:lower:]')
+DOCKER_PREFIX="shellcontainer-$PROJECT_NAME"
+DOCKER_IMAGE="debian:bookworm"
+# DOCKER_OPTS="--platform linux/aarch64"
+# Empty in case the profile doesn't exist
+ITERM2_PROFILE=""
+TERM_BG_COLOR="#011279"
+# TODO: where should we mount?  /project, /work, /home, /mnt, /sanbox, /host ?
+MOUNTPOINT=/media
+
+# TODO: What is the default docker domain?
+CT_DOMAIN=.local
+# OrbStack uses .orb.local hostnames
+if [ "$(command -v orb)" ]; then
+    CT_DOMAIN=".orb.local"
+fi
+
+# Load user defaults?
+[ -f "$HOME/.config/Shellfile.defaults" ] && . "$HOME/.config/Shellfile.defaults"
+
+# Load current shellfile settings
+[ -f "$SHELLFILE" ] && . "$SHELLFILE"
+
+# TODO: Check if it matches the Shellfile, or cidfiles / inspect?
+if [ "$ARGS_DOCKER_IMAGE" ]; then
+    DOCKER_IMAGE="$ARGS_DOCKER_IMAGE"
+fi
+
+
+# Split #rrggbb
+TERM_BG_COLOR_R=${TERM_BG_COLOR:1:2}
+TERM_BG_COLOR_G=${TERM_BG_COLOR:3:2}
+TERM_BG_COLOR_B=${TERM_BG_COLOR:5:2}
+
+
+##################
+# This is the keep-alive script to run as an entry point
+# It loops until there are no pseudo-TTY connected.
+# It periodically checks /dev/pts.
+# When the loop exits, the container will stop.
+keep_alive_cmd=$(cat <<EOF
+    #/bin/sh
+    echo Starting
+
+    num_pts=999
+    while [ "\$num_pts" -gt "0" ] ; do
+        # Check regularly
+        sleep 60
+        num_pts=\$(  'ls' /dev/pts/ | grep -v ptmx | wc -l  )
+        # echo \$num_pts 
+    done
+EOF)
+
+
+##################
+# Run a new container if we don't have a cidfile
+# The container will bind-mount the current dir
+# and run the keep-alive script
+if ! [ -f "$CID_FILE" ]; then
+    echo "Creating $CID_FILE."
+    
+    # Generate a random string or find a random word
+    # {a..z} -> In POSIX sh, brace expansion is undefined.
+    random_word=$(shuf -er -n8  a b c d e f g h i j k l m n o p q r s t u v w x y z | tr -d '\n')
+    words_file=/usr/share/dict/words
+    if [ -f $words_file ]; then
+        # Grab a random word, make it lowercase
+        random_word=$(cat $words_file | sort -R | head -1 | tr '[:upper:]' '[:lower]')
+    fi
+
+    # Name and hostname
+    ct_name="${DOCKER_PREFIX}-${random_word}"
+    ct_hostname="${ct_name}${CT_DOMAIN}"
+
+    # Start new container, bind current directory, and start keep alive loop
+    # TODO: How to pass DOCKER_OPTS properly?
+    echo "Starting new container: $ct_hostname from $DOCKER_IMAGE"
+    docker run -h "$ct_hostname" --name "$ct_name" --cidfile "$CID_FILE" -id --mount type=bind,target=$MOUNTPOINT,source="$(pwd)"  $DOCKER_OPTS  "$DOCKER_IMAGE"  /bin/sh -c "$keep_alive_cmd"
+
+    CID=$(cat "$CID_FILE")
+fi
+
+
+
+
+##################
+# Print project root if not the current directory
+if [ "$PROJECT_ROOT" != "$(pwd | realpath)" ]; then
+    echo "Project root: $PROJECT_ROOT"
+fi
+
+##################
+# (Re)start or attach to container, print info and cd into the relative directory
+CID=$(cat "$CID_FILE")
+SHORT_CID=$(echo "$CID" | head -c 16)
+
+# (re)start if stopped
+if [ ! "$(docker ps -q -f id="$CID")" ]; then
+    echo "Restarting:   $SHORT_CID"
+    docker start "$CID"
+else
+    echo "Attaching to: $SHORT_CID"
+fi
+
+##################
+# Warning if the image differs from the setting
+CONTAINER_IMAGE=$(docker container inspect -f "{{ .Config.Image }}" "$CID")
+if [ ! "$CONTAINER_IMAGE" = "$DOCKER_IMAGE" ]; then
+    echo "Warning: Container is based on ${CONTAINER_IMAGE} while ${DOCKER_IMAGE} is specified. Did you forget to rebuild the container after changing the image?"
+fi
+
+
+##################
+# Print URLs
+# Main network: fmt="http://{{.Config.Hostname}}  or http://{{.NetworkSettings.IPAddress }}"
+fmt="http://{{.Config.Hostname}}{{ range .NetworkSettings.Networks }}  or http://{{ .IPAddress }}{{end}}"
+CONTAINER_URLS=$(docker container inspect -f "$fmt" "$CID")
+echo "URLs: $CONTAINER_URLS"
+
+
+
+
+##################
+# Check directory relative to directory of .docker.shell.cid
+# Does not work with multiple mountpoints.
+# We cannot use realpath --relative-to.
+# realpath --relative-to="$CONTAINER_MOUNT_HOST" "$(pwd)"
+CONTAINER_MOUNT_HOST=$(docker container inspect -f "{{ range .Mounts }}{{.Source}}{{ end }}" "$CID")
+MOUNTPOINT=$(docker container inspect -f "{{ range .Mounts }}{{.Destination}}{{ end }}" "$CID")
+
+CONTAINER_MOUNT_HOST=$(realpath "$CONTAINER_MOUNT_HOST")
+HOST_PWD=$(pwd | realpath)
+
+# concatenate mountpoint + relative path
+# TODO: Find a posix compatible way to find/strip the path
+CONTAINER_WORKDIR="${MOUNTPOINT}${HOST_PWD/#$CONTAINER_MOUNT_HOST}"
+
+
+
+
+##################
+# Wrap the command in different iterm2 profile
+# This uses some control characters to change the iTerm2 profile
+# It also resets (clears) the profile after the child command exits
+set_term_bg_color() {
+    # hex does not work everywhere "\x1b]11;$TERM_BG_COLOR\x1b\\"
+    printf "\x1b]11;rgb:$TERM_BG_COLOR_R/$TERM_BG_COLOR_G/$TERM_BG_COLOR_B\x1b\\"
+}
+reset_term_bg_color() {
+    printf "\x1b]111;\x1b\\"
+}
+
+if [ "$TERM_PROGRAM" = "iTerm.app" ]; then
+    # For iterm, we can use profile names instead of colors
+    if [ "$ITERM2_PROFILE" ]; then
+        set_term_bg_color() {
+            # First argument is the template name
+            printf "\e]1337;SetProfile=$ITERM2_PROFILE\a"
+        }
+        reset_term_bg_color() {
+            printf "\e]1337;SetProfile=\a"
+        }
+    else
+        # iTerm doesn't support OSC 111 (reset)
+        # See https://gitlab.com/gnachman/iterm2/-/issues/10724
+        # querying OSC 11 requires raw mode / waits, so we'll skip that.
+        reset_term_bg_color() {
+            TERM_DEFAULT_BG="rgb:00/00/00"
+            printf "\x1b]11;$TERM_DEFAULT_BG\x1b\\"
+        }
+    fi
+elif [ "$TERM_PROGRAM" = "Apple_Terminal" ]; then
+    : # Works by default
+elif [ "$TERM_PROGRAM" = "vscode" ]; then
+    : # Works by default
+elif [ "$TERM_PROGRAM" = "Alacritty" ] || [ "$ALACRITTY_WINDOW_ID" ]; then
+    : # Works by default, TERM_PROGRAM not supported yet, doesn't matter
+elif [ "$ZED_TERM" = "true" ]; then
+    : # TODO: Zed doesn't respond to OSC 11. TERM_PROGRAM not supported yet.
+fi
+
+
+##################
+# Set terminal colors and trap to reset them again
+trap reset_term_bg_color EXIT HUP INT QUIT PIPE TERM
+set_term_bg_color
+
+##################
+# Attach to container using the user's shell and cd into the relative directory
+# docker exec -it $CID /bin/sh -c "cd /media && /bin/bash"
+# Note: "getent passwd <user>" is used to find the shell! Not stealing anything.
+cmd="user_shell=\$(  getent passwd \`whoami\` | awk -F: '{print \$NF}'  ) && \$user_shell"
+cmd=$(cat <<EOF
+    set -e
+    user_shell=\$(  getent passwd \`whoami\` | awk -F: '{print \$NF}'  )
+    \$user_shell
+EOF)
+
+docker exec --interactive --tty --workdir "$CONTAINER_WORKDIR"   "$CID" /bin/sh -c "$cmd"
+
