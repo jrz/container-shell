@@ -69,7 +69,7 @@ I know this is not how docker is intended to work, but this is what I want/need.
 It uses docker for now, but could also support nixos via OrbStack 'machines' in the future.
 See https://github.com/orbstack/orbstack/issues/169
 
-To use the ITERM2_PROFILE setting, create a new profile in iTerm2 with the name "shell-container" (or something else) and change its settings such as  background color.
+To use the ITERM2_PROFILE setting instead of background colors, create a new profile in iTerm2 with the name "shell-container" (or something else). Change its settings such as background color. This is the recommended method for now for iTerm2 as it does not support OSC 111 (reset terminal background color) yet and I currently assume a default black background.
 
 
 
