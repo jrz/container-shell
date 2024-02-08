@@ -353,9 +353,10 @@ set_term_bg_color
 
 ##################
 # Attach to container using the user's shell and cd into the relative directory
-# docker exec -it $CID /bin/sh -c "cd /media && /bin/bash"
-# Note: "getent passwd <user>" is used to find the shell! Not stealing anything.
-cmd="user_shell=\$(  getent passwd \`whoami\` | awk -F: '{print \$NF}'  ) && \$user_shell"
+# Ex: docker exec -it -w /media   $CID /bin/sh -c /bin/bash
+# Note: "getent passwd <user>" is used to find the shell of the user in the container's /etc/passwd.
+# Not reading out any passwords.
+# single line version -- cmd="user_shell=\$(  getent passwd \`whoami\` | awk -F: '{print \$NF}'  ) && \$user_shell"
 cmd=$(cat <<EOF
     set -e
     user_shell=\$(  getent passwd \`whoami\` | awk -F: '{print \$NF}'  )
