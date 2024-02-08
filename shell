@@ -215,7 +215,8 @@ keep_alive_cmd=$(cat <<EOF
         num_pts=\$(  'ls' /dev/pts/ | grep -v ptmx | wc -l  )
         # echo \$num_pts 
     done
-EOF)
+EOF
+)
 
 
 ##################
@@ -363,7 +364,8 @@ cmd=$(cat <<EOF
     set -e
     user_shell=\$(  getent passwd \`whoami\` | awk -F: '{print \$NF}'  )
     \$user_shell
-EOF)
+EOF
+)
 
 docker exec --interactive --tty --workdir "$CONTAINER_WORKDIR"   "$CID" /bin/sh -c "$cmd"
 
