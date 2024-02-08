@@ -3,8 +3,6 @@
 Starts and attaches a sandboxed shell using docker with access to the current or project directory.
 It could also be described as chroot mixed with containers.
 
-**Warning: I haven't actually tested this with Docker Desktop yet as I use OrbStack**
-
 Please visit https://github.com/jrz/container-shell for the latest version.
 
 
