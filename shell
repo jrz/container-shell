@@ -136,7 +136,7 @@ if [ "$PROJECT_ROOT" ]; then
         CID_FILE="$PROJECT_ROOT/$CID_FILE"
     fi
 else
-    PROJECT_ROOT=$(pwd  | realpath)
+    PROJECT_ROOT=$(realpath "`pwd`")
 fi
 
 
@@ -252,7 +252,7 @@ fi
 
 ##################
 # Print project root if not the current directory
-if [ "$PROJECT_ROOT" != "$(pwd | realpath)" ]; then
+if [ "$PROJECT_ROOT" != "$(pwd | realpath "`pwd`")" ]; then
     echo "Project root: $PROJECT_ROOT"
 fi
 
@@ -296,7 +296,7 @@ CONTAINER_MOUNT_HOST=$(docker container inspect -f "{{ range .Mounts }}{{.Source
 MOUNTPOINT=$(docker container inspect -f "{{ range .Mounts }}{{.Destination}}{{ end }}" "$CID")
 
 CONTAINER_MOUNT_HOST=$(realpath "$CONTAINER_MOUNT_HOST")
-HOST_PWD=$(pwd | realpath)
+HOST_PWD=$(realpath "`pwd`")
 
 # concatenate mountpoint + relative path
 # TODO: Find a posix compatible way to find/strip the path
