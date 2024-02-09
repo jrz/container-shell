@@ -273,7 +273,21 @@ fi
 # Warning if the image differs from the setting
 CONTAINER_IMAGE=$(docker container inspect -f "{{ .Config.Image }}" "$CID")
 if [ ! "$CONTAINER_IMAGE" = "$DOCKER_IMAGE" ]; then
-    echo "Warning: Container is based on ${CONTAINER_IMAGE} while ${DOCKER_IMAGE} is specified. Did you forget to rebuild the container after changing the image?"
+    echo
+    echo "Warning: Current container is based on ${CONTAINER_IMAGE} while ${DOCKER_IMAGE} is specified."
+
+    if [ "$ARGS_DOCKER_IMAGE" ]; then
+        # Adhoc
+        echo "Multiple containers in one project/directory is currently not supported."
+        echo "Please delete the .docker.shell.cid file (container $SHORT_CID)."
+        echo "Note: Doing so will create a new container on the next run."
+    else
+        # Using shellfile
+        echo "Please update the Shellfile to use to original image ($CONTAINER_IMAGE)"
+        echo "or delete the .docker.shell.cid file (container $SHORT_CID)."
+        echo "Note: Doing so will create a new container on the next run."
+    fi
+    echo
 fi
 
 
