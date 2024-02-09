@@ -22,8 +22,8 @@ See https://github.com/jrz/container-shell for limitations and how it works.
        ** Please do not use for scripting (yet) **
 
 Examples
+  shell debian:bookworm   Creates a new ad-hoc shell based on debian:bookworm
   shell                   Uses a Shellfile to create a new shell
-  shell debian:bookworm   Creates a new shell based on debian:bookworm
 
   Both commands check if a container exists using a .docker.shell.cid file.
   Both commands will result in an attached shell.

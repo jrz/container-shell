@@ -37,9 +37,9 @@ chmod +x /usr/local/bin/shell
 ```
 
 # Usage
-The CLI will most likely change. The program can be used with or without creating a Shellfile:
+The CLI will most likely change. The program can be used ad-hoc or using a Shellfile:
 
-## Without a Shellfile
+## Ad hoc (no Shellfile)
 ```
 > shell [docker-image]
 ```
