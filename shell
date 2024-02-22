@@ -232,7 +232,7 @@ if ! [ -f "$CID_FILE" ]; then
     words_file=/usr/share/dict/words
     if [ -f $words_file ]; then
         # Grab a random word, make it lowercase
-        random_word=$(cat $words_file | sort -R | head -1 | tr '[:upper:]' '[:lower]')
+        random_word=$(cat $words_file | sort -R | head -1 | tr '[:upper:]' '[:lower:]')
     fi
 
     # Name and hostname
