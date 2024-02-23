@@ -30,6 +30,7 @@ Examples
 
 Options
   -f           Name of the Shellfile (default: Shellfile)
+  -n           Don't traverse directory tree / create new ad-hoc instance
   -h, --help   Show this message
 
 Shellfile / Environment variables
@@ -51,7 +52,7 @@ if [[ ( $@ == "--help") ||  $@ == "-h" ]]; then
     exit 0
 fi
 
-while getopts "hf:" opt; do
+while getopts "hnf:" opt; do
     case $opt in
         h)
             print_usage
@@ -59,6 +60,9 @@ while getopts "hf:" opt; do
             ;;
         f)
             OPT_SHELLFILE=${OPTARG}
+            ;;
+        n)
+            DONT_TRAVERSE_PROJECT_ROOT=true
             ;;
         \?)
             exit 1
@@ -121,7 +125,11 @@ SHELLFILE=${OPT_SHELLFILE:-Shellfile}
 CID_FILE=".docker.shell.cid"
 
 # Find containing id in current directory or any parent dir
-PROJECT_ROOT=$(find_project_root "Shellfile" "$CID_FILE")
+if [ "$DONT_TRAVERSE_PROJECT_ROOT" ]; then
+    PROJECT_ROOT=$(pwd)
+else
+    PROJECT_ROOT=$(find_project_root "Shellfile" "$CID_FILE")
+fi
 
 # TODO: check for conflicting opt_shell file and project root
 # If we have detected an existing project root
