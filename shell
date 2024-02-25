@@ -250,7 +250,7 @@ if ! [ -f "$CID_FILE" ]; then
     # Start new container, bind current directory, and start keep alive loop
     # TODO: How to pass DOCKER_OPTS properly?
     echo "Starting new container: $ct_hostname from $DOCKER_IMAGE"
-    docker run -h "$ct_hostname" --name "$ct_name" --cidfile "$CID_FILE" -id --mount type=bind,target=$MOUNTPOINT,source="$(pwd)"  $DOCKER_OPTS  "$DOCKER_IMAGE"  /bin/sh -c "$keep_alive_cmd"
+    docker run -h "$ct_hostname" --name "$ct_name" --cidfile "$CID_FILE" -id --mount type=bind,target="$MOUNTPOINT",source="$(pwd)"  $DOCKER_OPTS  "$DOCKER_IMAGE"  /bin/sh -c "$keep_alive_cmd"
 
     CID=$(cat "$CID_FILE")
 fi
