@@ -179,8 +179,8 @@ DOCKER_IMAGE="debian:bookworm"
 # Empty in case the profile doesn't exist
 ITERM2_PROFILE=""
 TERM_BG_COLOR="#011279"
-# TODO: where should we mount?  /project, /work, /home, /mnt, /sanbox, /host ?
-MOUNTPOINT=/media
+# Use the project root as the mountpoint in the container to match the host
+MOUNTPOINT="${PROJECT_ROOT}"
 
 # TODO: What is the default docker domain?
 CT_DOMAIN=.local

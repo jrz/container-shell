@@ -56,6 +56,7 @@ Example:
   DOCKER_OPTS="--platform linux/aarch64"
   DOCKER_IMAGE="debian:bookworm"
   TERM_BG_COLOR="#011279"
+  MOUNTPOINT="/project"
 
   > shell
 ```
