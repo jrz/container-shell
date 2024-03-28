@@ -8,7 +8,7 @@ set -e
 
 print_usage()  {
 cat <<EOF
-shell v0.2
+shell v0.2.1
 Usage:  shell [-f file] [docker-image]
 
 Starts and attaches a sandboxed shell using docker.
