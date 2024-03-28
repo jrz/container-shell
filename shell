@@ -314,8 +314,8 @@ echo "URLs: $CONTAINER_URLS"
 # Does not work with multiple mountpoints.
 # We cannot use realpath --relative-to.
 # realpath --relative-to="$CONTAINER_MOUNT_HOST" "$(pwd)"
-CONTAINER_MOUNT_HOST=$(docker container inspect -f "{{ range .Mounts }}{{.Source}}{{ end }}" "$CID")
-MOUNTPOINT=$(docker container inspect -f "{{ range .Mounts }}{{.Destination}}{{ end }}" "$CID")
+CONTAINER_MOUNT_HOST=$(docker container inspect -f "{{ range .HostConfig.Mounts }}{{.Source}}{{ end }}" "$CID")
+MOUNTPOINT=$(docker container inspect -f "{{ range .HostConfig.Mounts }}{{.Target}}{{ end }}" "$CID")
 
 CONTAINER_MOUNT_HOST=$(realpath "$CONTAINER_MOUNT_HOST")
 HOST_PWD=$(realpath "`pwd`")
