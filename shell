@@ -9,7 +9,7 @@ set -e
 print_usage()  {
 cat <<EOF
 shell v0.2.1
-Usage:  shell [-f file] [docker-image]
+Usage:  shell [-f file] [init | docker-image]
 
 Starts and attaches a sandboxed shell using docker.
 
@@ -22,8 +22,10 @@ See https://github.com/jrz/container-shell for limitations and how it works.
        ** Please do not use for scripting (yet) **
 
 Examples
+  shell init              Creates a new Shellfile with linux container
+
+  shell                   Creates a new shell based on an existing Shellfile
   shell debian:bookworm   Creates a new ad-hoc shell based on debian:bookworm
-  shell                   Uses a Shellfile to create a new shell
 
   Both commands check if a container exists using a .docker.shell.cid file.
   Both commands will result in an attached shell.
@@ -42,6 +44,24 @@ Shellfile / Environment variables
 EOF
 }
 
+print_short_usage()  {
+cat <<EOF
+Usage:  shell [init | docker-image]
+
+Examples:
+  shell init              Creates a new Shellfile with linux container
+
+  shell                   Creates a new shell based on an existing Shellfile
+  shell debian:bookworm   Creates a new ad-hoc shell based on debian:bookworm
+
+  Both commands check if a container exists using a .docker.shell.cid file.
+  Both commands will result in an attached shell.
+
+Options
+  -h, --help   Print more detailed usage
+
+EOF
+}
 
 
 # check whether user had supplied -h or --help . If yes display usage
@@ -152,18 +172,31 @@ fi
 
 
 if [ "$ARGS_DOCKER_IMAGE" ]; then
+    if [ "$ARGS_DOCKER_IMAGE" = "init" ]; then
+        # init local file if it does not exist.
+        if [ -f "$SHELLFILE" ]; then
+            echo "Shellfile already exists at $SHELLFILE"
+            exit 1
+        else
+            echo "Creating new Shellfile at $SHELLFILE"
+            touch $SHELLFILE
+            echo 'DOCKER_IMAGE="debian:bookworm"' >> $SHELLFILE
+            echo "Please review the Shellfile and start the container with:"
+            echo ""
+            echo "  shell (no arguments)"
+            exit 0
+        fi
+    fi
     ARGS_DOCKER_IMAGE="$1"
 elif [ -f "$CID_FILE" ]; then
     # We have a cid-file, so we can start without arguments
     : # do nothing
 else
     if ! [ -f "$SHELLFILE" ]; then
-        echo "$SHELLFILE does not exist and no cid-file exists. Please create a Shell file or specify a docker-image:"
-        echo 'DOCKER_PREFIX="shellcontainer-myproject"'
-        echo 'DOCKER_OPTS="--platform linux/aarch64"'
-        echo 'DOCKER_IMAGE="debian:bookworm"'
-        echo 'ITERM2_PROFILE="container-shell"'
-        echo 'TERM_BG_COLOR="#011279"'
+        # 
+        echo "$SHELLFILE does not exist and no cid-file exists. Please run 'shell init' or specify an ad-hoc docker-image."
+        echo ""
+        print_short_usage
 
         exit 1
     fi
