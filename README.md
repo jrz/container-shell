@@ -46,19 +46,33 @@ The CLI will most likely change. The program can be used ad-hoc or using a Shell
 For example `shell debian:bookworm`
 
 ## Using a Shellfile
-Create a Shellfile in the current or project directory.
-The Shellfile will be sourced to override default settings.
+Use the ```shell init``` command to create a new Shellfile in the current directory if no other Shellfile can be found. The Shellfile will be sourced to override default settings. Please refer to the 'Shellfile settings' section for all available settings.
+
+```
+  > shell init
+  > vi ./Shellfile     # Optionally edit the Shellfile
+  > shell              # Run the container
+```
+
+
+
+## Shellfile settings
 Example:
 ```
-  > vi Shellfile
-
-  DOCKER_PREFIX="sc-myproject"
-  DOCKER_OPTS="--platform linux/aarch64"
+  # Docker image to use when creating the container (debian:bookworm)
   DOCKER_IMAGE="debian:bookworm"
-  TERM_BG_COLOR="#011279"
-  MOUNTPOINT="/project"
 
-  > shell
+  # Naming prefix  (ex. shellcontainer-myproject)
+  DOCKER_PREFIX="sc-myproject"
+  
+  # Passed when creating container (ex. --platform linux/aarch64)
+  DOCKER_OPTS="--platform linux/aarch64"
+  
+  # Temporary terminal background color when inside container (#011279)
+  TERM_BG_COLOR="#011279"
+  
+  # Temporary iTerm2 profile name when inside container (container-shell)
+  MOUNTPOINT="/project"
 ```
 
 
@@ -69,7 +83,7 @@ I know this is not how docker is intended to work, but this is what I want/need.
 It uses docker for now, but could also support nixos via OrbStack 'machines' in the future.
 See https://github.com/orbstack/orbstack/issues/169
 
-To use the ITERM2_PROFILE setting instead of background colors, create a new profile in iTerm2 with the name "shell-container" (or something else). Change its settings such as background color. This is the recommended method for now for iTerm2 as it does not support OSC 111 (reset terminal background color) yet and I currently assume a default black background.
+To use the ITERM2_PROFILE setting instead of using only background colors, create a new profile in iTerm2 with the name "shell-container" (or something else). Change its settings such as background color.
 
 The bindmount fails when the project directory is moved after creation.
 
@@ -78,5 +92,5 @@ The bindmount fails when the project directory is moved after creation.
 - It'd be nice to be able to automatically build a Dockerfile when it's in the current directory.
 - Add rm command to clean up containers.
 - Make the default domain compatible with other things than OrbStack
-- Command like shell init / create to create a template Shellfile
 - Add PACKAGE_LIST to Shellfile to automatically build a derived docker image
+- Add an interactive ui for ```shell init```
