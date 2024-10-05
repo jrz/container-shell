@@ -58,7 +58,7 @@ Examples:
   Both commands will result in an attached shell.
 
 Options
-  -h, --help   Print more detailed usage
+  -h, --help   Print a more detailed usage and information about the Shellfile
 
 EOF
 }
