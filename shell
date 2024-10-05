@@ -141,7 +141,7 @@ find_project_root() {
 
 
 # Settings
-SHELLFILE=${OPT_SHELLFILE:-Shellfile}
+SHELLFILE=${OPT_SHELLFILE:-./Shellfile}
 CID_FILE=".docker.shell.cid"
 
 # Find containing id in current directory or any parent dir
