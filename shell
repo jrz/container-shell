@@ -36,9 +36,9 @@ Options
   -h, --help   Show this message
 
 Shellfile / Environment variables
+  DOCKER_IMAGE    Docker image to use when creating the container (debian:bookworm)
   DOCKER_PREFIX   Naming prefix  (ex. shellcontainer-myproject)
   DOCKER_OPTS     Passed when creating container (ex. --platform linux/aarch64)
-  DOCKER_IMAGE    Docker image to use when creating the container (debian:bookworm)
   TERM_BG_COLOR   Temporary terminal background color when inside container (#011279)
   ITERM2_PROFILE  Temporary iTerm2 profile name when inside container (container-shell)
 EOF
@@ -206,8 +206,8 @@ fi
 # Defaults
 # use the project directory as a a prefix
 PROJECT_NAME=$(basename "$PROJECT_ROOT" | tr ' ' '-' | tr -dc '[:alnum:]-' | tr '[:upper:]' '[:lower:]')
-DOCKER_PREFIX="shellcontainer-$PROJECT_NAME"
 DOCKER_IMAGE="debian:bookworm"
+DOCKER_PREFIX="shellcontainer-$PROJECT_NAME"
 # DOCKER_OPTS="--platform linux/aarch64"
 # Empty in case the profile doesn't exist
 ITERM2_PROFILE=""
