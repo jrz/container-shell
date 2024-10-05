@@ -49,7 +49,7 @@ For example `shell debian:bookworm`
 Use the ```shell init``` command to create a new Shellfile in the current directory if no other Shellfile can be found. The Shellfile will be sourced to override default settings. Please refer to the 'Shellfile settings' section for all available settings.
 
 ```
-  > shell init
+  > shell init         # Creates a Shellfile with a debian:bookworm image
   > vi ./Shellfile     # Optionally edit the Shellfile
   > shell              # Run the container
 ```
