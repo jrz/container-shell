@@ -269,7 +269,9 @@ if ! [ -f "$CID_FILE" ]; then
     
     # Generate a random string or find a random word
     # {a..z} -> In POSIX sh, brace expansion is undefined.
-    random_word=$(shuf -er -n8  a b c d e f g h i j k l m n o p q r s t u v w x y z | tr -d '\n')
+    # /dev/urandom is our best best compared to $RANDOM or shuf
+    LC_ALL=C  random_word=$(tr -dc 'a-z' < /dev/urandom | head -c8; echo)
+    
     words_file=/usr/share/dict/words
     if [ -f $words_file ]; then
         # Grab a random word, make it lowercase
