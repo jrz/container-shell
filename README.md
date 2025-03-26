@@ -1,4 +1,4 @@
-# shell (container-shell) v0.2.1
+# shell (container-shell) v0.2.2
 
 Starts and attaches a sandboxed shell using docker with access to the current or project directory.
 It could also be described as chroot mixed with containers.
