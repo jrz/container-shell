@@ -25,7 +25,7 @@ Examples
   shell init              Creates a new Shellfile with linux container
 
   shell                   Creates a new shell based on an existing Shellfile
-  shell debian:bookworm   Creates a new ad-hoc shell based on debian:bookworm
+  shell debian:trixie     Creates a new ad-hoc shell based on debian:trixie
 
   Both commands check if a container exists using a .docker.shell.cid file.
   Both commands will result in an attached shell.
@@ -36,7 +36,7 @@ Options
   -h, --help   Show this message
 
 Shellfile / Environment variables
-  DOCKER_IMAGE       Docker image to use when creating the container (debian:bookworm)
+  DOCKER_IMAGE       Docker image to use when creating the container (debian:trixie)
   DOCKER_PREFIX      Naming prefix  (ex. shellcontainer-myproject)
   DOCKER_MOUNTPOINT  Where the project root is mounted in the container
                      (defaults to mirroring the host's location)
@@ -54,7 +54,7 @@ Examples:
   shell init              Creates a new Shellfile with linux container
 
   shell                   Creates a new shell based on an existing Shellfile
-  shell debian:bookworm   Creates a new ad-hoc shell based on debian:bookworm
+  shell debian:trixie     Creates a new ad-hoc shell based on debian:trixie
 
   Both commands check if a container exists using a .docker.shell.cid file.
   Both commands will result in an attached shell.
@@ -182,7 +182,8 @@ if [ "$ARGS_DOCKER_IMAGE" ]; then
         else
             echo "Creating new Shellfile at $SHELLFILE"
             touch $SHELLFILE
-            echo 'DOCKER_IMAGE="debian:bookworm"' >> $SHELLFILE
+            echo 'DOCKER_IMAGE="debian:trixie"' >> $SHELLFILE
+
             echo "Please review the Shellfile and start the container with:"
             echo ""
             echo "  shell (no arguments)"
@@ -208,7 +209,7 @@ fi
 # Defaults
 # use the project directory as a a prefix
 PROJECT_NAME=$(basename "$PROJECT_ROOT" | tr ' ' '-' | tr -dc '[:alnum:]-' | tr '[:upper:]' '[:lower:]')
-DOCKER_IMAGE="debian:bookworm"
+DOCKER_IMAGE="debian:trixie"
 DOCKER_PREFIX="shellcontainer-$PROJECT_NAME"
 # DOCKER_OPTS="--platform linux/aarch64"
 # Empty in case the profile doesn't exist
