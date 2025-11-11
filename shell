@@ -109,24 +109,18 @@ fi
 # Starts in the current directory, and keeps going up one level.
 find_project_root() {
     set -e
-    filename_1=$1
-    filename_2=$2
-    parent=$(pwd)
+    file_to_look_for=$(basename "$1")
+    parent=$(dirname "$file_to_look_for")
+    parent=$(realpath "$parent")
     found=""
     done=""
-    while [ ! "$found" ] && [ ! "$done" ] 
-    do
+    while [ ! "$found" ] && [ ! "$done" ]; do
         if [ "$parent" = "/" ]; then
             done=true
         fi
 
         # Shellfile
-        if [ -f "${parent}/$filename_1" ]; then
-            found=${parent}
-        fi
-
-        # cid-file
-        if [ -f "${parent}/$filename_2" ]; then
+        if [ -f "${parent}/$file_to_look_for" ]; then
             found=${parent}
         fi
 
@@ -135,8 +129,8 @@ find_project_root() {
     if [ "$found" ]; then
         echo "$found"
     fi
+    # otherwise return empty.
 }
-
 
 
 
@@ -150,7 +144,7 @@ CID_FILE=".docker.shell.cid"
 if [ "$DONT_TRAVERSE_PROJECT_ROOT" ]; then
     PROJECT_ROOT=$(pwd)
 else
-    PROJECT_ROOT=$(find_project_root "Shellfile" "$CID_FILE")
+    PROJECT_ROOT=$(find_project_root "$SHELLFILE")
 fi
 
 # TODO: check for conflicting opt_shell file and project root
