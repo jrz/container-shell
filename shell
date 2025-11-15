@@ -5,11 +5,13 @@
 
 set -e
 
+VERSION="0.2.3"
+GIT_REPO="jrz/container-shell"
 
 print_usage()  {
 cat <<EOF
-shell v0.2.3
-Usage:  shell [-f file] [init | docker-image]
+shell v$VERSION
+Usage:  shell [-f file] [init | <docker-image> | update]
 
 Starts and attaches a sandboxed shell using docker.
 
@@ -29,6 +31,9 @@ Examples
 
   Both commands check if a container exists using a .docker.shell.cid file.
   Both commands will result in an attached shell.
+
+  shell update            Checks if a newer version available of this tool
+
 
 Options
   -f           Name of the Shellfile (default: Shellfile)
@@ -101,9 +106,45 @@ if [ "$#" -ge 2 ]; then
     exit 1
 fi
 
-if [ "$1" ]; then
-    ARGS_DOCKER_IMAGE="$1"
+
+check_for_update() {
+    echo "Checking for updates"
+    latest_url="https://raw.githubusercontent.com/$GIT_REPO/main/VERSION"
+
+    set +e
+    latest="$(curl -fsSL "$latest_url" 2>/dev/null)"
+    latest_exitcode=$?
+    set  -e
+    if [ "$latest_exitcode" != "0" ]; then
+        echo "Error checking latest version at $latest_url"
+        exit 1
+    fi
+
+    echo "Latest version: $latest (you have $VERSION)"
+    
+    if [ -n "$latest" ] && [ "$latest" != "$VERSION" ]; then
+        echo
+        echo "  New version available. Update with: "
+        shell_script_path=$(realpath "$0")
+        echo "    curl -fsSL https://raw.githubusercontent.com/$GIT_REPO/main/shell -o $shell_script_path"
+    fi
+}
+
+
+ARGS_COMMAND="$1"
+if [ "$ARGS_COMMAND" ]; then
+    if [ "$ARGS_COMMAND" == "update" ]; then
+        check_for_update
+        exit 0
+    elif [ "$ARGS_COMMAND" == "init" ]; then
+        : # do nothing yet
+    else
+        ARGS_DOCKER_IMAGE="$ARGS_COMMAND"
+        unset ARGS_COMMAND
+    fi
 fi
+
+
 
 # Searches for the project root containing Shellfile or cidfile
 # Starts in the current directory, and keeps going up one level.
@@ -166,9 +207,7 @@ fi
 
 
 
-
-if [ "$ARGS_DOCKER_IMAGE" ]; then
-    if [ "$ARGS_DOCKER_IMAGE" = "init" ]; then
+if [ "$ARGS_COMMAND" = "init" ]; then
         # init local file if it does not exist.
         if [ -f "$SHELLFILE" ]; then
             echo "Shellfile already exists at $SHELLFILE"
@@ -184,6 +223,8 @@ if [ "$ARGS_DOCKER_IMAGE" ]; then
             exit 0
         fi
     fi
+
+if [ "$ARGS_DOCKER_IMAGE" ]; then
     ARGS_DOCKER_IMAGE="$1"
 elif [ -f "$CID_FILE" ]; then
     # We have a cid-file, so we can start without arguments
