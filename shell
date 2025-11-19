@@ -450,18 +450,38 @@ fi
 trap reset_term_bg_color EXIT HUP INT QUIT PIPE TERM
 set_term_bg_color
 
+
+
 ##################
 # Attach to container using the user's shell and cd into the relative directory
 # Ex: docker exec -it -w /media   $CID /bin/sh -c /bin/bash
-# Note: "getent passwd <user>" is used to find the shell of the user in the container's /etc/passwd.
-# Not reading out any passwords.
-# single line version -- cmd="user_shell=\$(  getent passwd \`whoami\` | awk -F: '{print \$NF}'  ) && \$user_shell"
-cmd=$(cat <<EOF
-    set -e
-    user_shell=\$(  getent passwd \`whoami\` | awk -F: '{print \$NF}'  )
-    \$user_shell
+
+
+# This command is passed to the initial /bin/sh, and switched to the user's shell instead of /bin/sh
+# Note: Does not read any passwords. This is done to find the shell of the user (inside the container)
+#   "getent passwd <user>"    to query NSS (ldap/ad/etc) (inside the container)
+#   /etc/passwd               to check local configuration (inside the container)
+exec_user_shell_cmd=$(cat <<EOF
+    user_name="\$(id -un)"
+
+    # Try getent if available
+    if command -v getent >/dev/null 2>&1; then
+        user_shell=\$(getent passwd "\$user_name" | awk -F: '{print \$7}')
+    fi
+
+    # Fallback to passwd file
+    if [ -z "\$user_shell" ] && [ -r /etc/passwd ]; then
+        user_shell=\$(awk -F: -v u="\$user_name" '\$1 == u { print \$7; exit }' /etc/passwd)
+    fi
+
+    # fall back
+    [ -n "\$user_shell" ] || user_shell=/bin/sh
+
+    # replace current process, force interactive shell
+    exec    \$user_shell -i
 EOF
 )
 
-docker exec --interactive --tty --workdir "$CONTAINER_WORKDIR"   "$CID" /bin/sh -c "$cmd"
+
+docker exec --interactive --tty --workdir "$CONTAINER_WORKDIR"   "$CID" /bin/sh -ic "$exec_user_shell_cmd"
 
