@@ -423,16 +423,6 @@ if [ "$TERM_PROGRAM" = "iTerm.app" ]; then
         reset_term_bg_color() {
             printf "\e]1337;SetProfile=\a"
         }
-    else
-        # iTerm doesn't support OSC 111 (reset)
-        # See https://gitlab.com/gnachman/iterm2/-/issues/10724
-        # querying OSC 11 requires raw mode / waits, so we'll skip that.
-        reset_term_bg_color() {
-            TERM_DEFAULT_BG="rgb:00/00/00"
-            printf "\x1b]11;$TERM_DEFAULT_BG\x1b\\"
-            # Reset for users of the beta version
-            printf "\x1b]111;\x1b\\"
-        }
     fi
 elif [ "$TERM_PROGRAM" = "Apple_Terminal" ]; then
     : # Works by default
