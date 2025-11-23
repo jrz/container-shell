@@ -1,4 +1,4 @@
-# shell (container-shell) v0.2.2
+# shell (container-shell) v0.2.4
 
 Starts and attaches a sandboxed shell using docker with access to the current or project directory.
 It could also be described as chroot mixed with containers.
@@ -36,6 +36,13 @@ cp shell /usr/local/bin/
 chmod +x /usr/local/bin/shell
 ```
 
+# Updating
+To check for the latest version, use the following command:
+```
+shell update
+```
+
+
 # Usage
 The CLI will most likely change. The program can be used ad-hoc or using a Shellfile:
 
@@ -43,13 +50,13 @@ The CLI will most likely change. The program can be used ad-hoc or using a Shell
 ```
 > shell [docker-image]
 ```
-For example `shell debian:bookworm`
+For example `shell debian:trixie`
 
 ## Using a Shellfile
 Use the ```shell init``` command to create a new Shellfile in the current directory if no other Shellfile can be found. The Shellfile will be sourced to override default settings. Please refer to the 'Shellfile settings' section for all available settings.
 
 ```
-  > shell init         # Creates a Shellfile with a debian:bookworm image
+  > shell init         # Creates a Shellfile with a debian:trixie image
   > vi ./Shellfile     # Optionally edit the Shellfile
   > shell              # Run the container
 ```
@@ -59,8 +66,8 @@ Use the ```shell init``` command to create a new Shellfile in the current direct
 ## Shellfile settings
 Example:
 ```
-  # Docker image to use when creating the container (debian:bookworm)
-  DOCKER_IMAGE="debian:bookworm"
+  # Docker image to use when creating the container (debian:trixie)
+  DOCKER_IMAGE="debian:trixie"
 
   # Naming prefix  (ex. shellcontainer-myproject)
   DOCKER_PREFIX="sc-myproject"
