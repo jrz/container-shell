@@ -5,7 +5,7 @@
 
 set -e
 
-VERSION="0.2.4"
+VERSION="0.2.5"
 GIT_REPO="jrz/container-shell"
 
 print_usage()  {
@@ -188,6 +188,9 @@ else
     PROJECT_ROOT=$(find_project_root "$SHELLFILE")
 fi
 
+PROJECT_ROOT=$(realpath "${PROJECT_ROOT:-.}")
+
+
 # TODO: check for conflicting opt_shell file and project root
 # If we have detected an existing project root
 if [ "$PROJECT_ROOT" ]; then
@@ -251,7 +254,7 @@ DOCKER_PREFIX="shellcontainer-$PROJECT_NAME"
 ITERM2_PROFILE=""
 TERM_BG_COLOR="#011279"
 # Use the project root as the mountpoint in the container to match the host
-MOUNTPOINT="${DOCKER_MOUNTPOINT:-PROJECT_ROOT}"
+MOUNTPOINT="${DOCKER_MOUNTPOINT:-$PROJECT_ROOT}"
 
 # TODO: What is the default docker domain?
 CT_DOMAIN=.local
